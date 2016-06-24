@@ -1,5 +1,5 @@
 var express = require("express");
-	, cors = require('cors')
+var cors = require('cors')
 var bodyParser = require("body-parser");
 var app = express();
 
@@ -12,3 +12,4 @@ var routes = require("./routes.js")(app);
 var server = app.listen(3000, function(){
 	console.log("Listening on port %s...", server.address().port);
 });
+
