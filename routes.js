@@ -20,9 +20,12 @@ var appRouter = function(app) {
 
 		var item = req.body.name;
 		//var entry = { name: item};
-		con.query('INSERT INTO diet_items (name) values(?)', item, function(err, result){
-		if(err)
-			return this.sendErrorMessage('Error');
+		con.query('INSERT INTO diet_items (name) values(?)', [item], function(err, result){
+		if(err) {
+			console.log(err);
+			res.sendStatus(500);
+			return;
+		}
 		res.sendStatus(200);
 
 		});    	
@@ -33,8 +36,11 @@ var appRouter = function(app) {
 	app.get("/diet", function(req, res) {
 		//get all items
 		con.query('SELECT f.id, f.name, UNIX_TIMESTAMP(h.date) AS `last_eaten` FROM diet_items f LEFT JOIN history h ON f.id = h.diet_item_id AND h.date = (SELECT MAX(date) FROM history hi WHERE hi.diet_item_id = h.diet_item_id);', function(err, result){
-			if(err)
-				return this.sendErrorMessage('Error');
+			if(err) {
+				console.log(err);
+				res.sendStatus(500);
+				return;
+			}
 			res.send(JSON.stringify(result));
 		});
 
@@ -46,8 +52,11 @@ var appRouter = function(app) {
 
 		var id = req.params.id;
 		con.query('SELECT * FROM diet_items WHERE id = ?', id, function(err, result){
-			if(err)
-				return this.sendErrorMessage('Error');
+			if(err) {
+				console.log(err);
+				res.sendStatus(500);
+				return;
+			}
 			if(result.length === 0){
 				res.send(JSON.stringify(null));
 			}
@@ -60,8 +69,11 @@ var appRouter = function(app) {
 
 		var id = req.params.id;
 		con.query('SELECT id, diet_item_id, UNIX_TIMESTAMP(date) as `date` FROM history WHERE diet_item_id = ?', id, function(err, result){
-			if(err)
-				return this.sendErrorMessage('Error');
+			if(err) {
+				console.log(err);
+				res.sendStatus(500);
+				return;
+			}
 			res.send(JSON.stringify(result));
 		});
 
@@ -77,21 +89,31 @@ var appRouter = function(app) {
 		con.query('INSERT INTO history (diet_item_id, date) values(?,FROM_UNIXTIME(?))',
 			[id, date],
 			function(err, result) {
-				if(err)
-					return this.sendErrorMessage('Error');
+				if(err) {
+					console.log(err);
+					console.log(req.body);
+					res.send(JSON.stringify("fail"));
+					return;
+				}
 				res.send(JSON.stringify("success"));
 			}
 		);
 	});
 
-	app.delete("/diet/:id/history", function(req,res){
+	app.delete("/diet/:id/history/:date", function(req,res){
 
 		var id = req.params.id;
-		var date = req.body.date;
+		//var date = req.body.date;
+		var date = req.params.date;
+
+		console.log("Delete attempted " + JSON.stringify(req.body));
 
 		con.query('DELETE FROM history WHERE diet_item_id = ? AND CAST(FROM_UNIXTIME(?) AS DATE) = CAST(date AS DATE)',[id, date], function(err, result){
-			if(err)
-				return this.sendErrorMessage('Error');
+			if(err) {
+				console.log(err);
+				res.sendStatus(500);
+				return;
+			}
 			if(result.affectedRows.length === 0)
 				res.sendStatus(404);
 			res.sendStatus(204);
@@ -103,8 +125,11 @@ var appRouter = function(app) {
 
 		var id = req.params.id;
 		con.query('DELETE FROM diet_items WHERE id = ?',id, function(err, result){
-			if(err)
-				return this.sendErrorMessage('Error');
+			if(err) {
+				console.log(err);
+				res.sendStatus(500);
+				return;
+			}
 			if(result.affectedRows.length === 0)
 				res.sendStatus(404);
 			res.sendStatus(204);
