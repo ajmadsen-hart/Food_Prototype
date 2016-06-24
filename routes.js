@@ -32,7 +32,7 @@ var appRouter = function(app) {
 
 	app.get("/diet", function(req, res) {
 		//get all items
-		con.query('SELECT f.id, f.name, h.date AS `last_eaten` FROM diet_items f LEFT JOIN history h ON f.id = h.diet_item_id AND h.date = (SELECT MAX(date) FROM history hi WHERE hi.diet_item_id = h.diet_item_id);', function(err, result){
+		con.query('SELECT f.id, f.name, UNIX_TIMESTAMP(h.date) AS `last_eaten` FROM diet_items f LEFT JOIN history h ON f.id = h.diet_item_id AND h.date = (SELECT MAX(date) FROM history hi WHERE hi.diet_item_id = h.diet_item_id);', function(err, result){
 			if(err)
 				return this.sendErrorMessage('Error');
 			res.send(JSON.stringify(result));
@@ -59,7 +59,7 @@ var appRouter = function(app) {
 	app.get("/diet/:id/history", function(req, res){
 
 		var id = req.params.id;
-		con.query('SELECT * FROM history WHERE diet_item_id = ?', id, function(err, result){
+		con.query('SELECT id, diet_item_id, UNIX_TIMESTAMP(date) as `date` FROM history WHERE diet_item_id = ?', id, function(err, result){
 			if(err)
 				return this.sendErrorMessage('Error');
 			res.send(JSON.stringify(result));
