@@ -1,4 +1,3 @@
-
 var appRouter = function(app) {
 
 	var mysql = require("mysql");
@@ -21,9 +20,9 @@ var appRouter = function(app) {
 
 		var item = req.body.name;
 		//var entry = { name: item};
-		con.query(' INSERT INTO diet_items (name) values(?)', item, function(err, res){
+		con.query('INSERT INTO diet_items (name) values(?)', item, function(err, result){
 		if(err)
-			throw err;
+			return this.sendErrorMessage('Error');
 		res.sendStatus(200);
 
 		});    	
@@ -33,10 +32,10 @@ var appRouter = function(app) {
 
 	app.get("/diet", function(req, res) {
 		//get all items
-		con.query('Select * from diet_items', function(err, res){
+		con.query('SELECT f.id, f.name, h.date AS `last_eaten` FROM diet_items f LEFT JOIN history h ON f.id = h.diet_item_id AND h.date = (SELECT MAX(date) FROM history hi WHERE hi.diet_item_id = h.diet_item_id);', function(err, result){
 			if(err)
-				throw err;
-			res.send(JSON.stringify(res));
+				return this.sendErrorMessage('Error');
+			res.send(JSON.stringify(result));
 		});
 
 		//con.close();
@@ -48,7 +47,7 @@ var appRouter = function(app) {
 		var id = req.params.id;
 		con.query('SELECT * FROM diet_items WHERE id = ?', id, function(err, result){
 			if(err)
-				throw err;
+				return this.sendErrorMessage('Error');
 			if(result.length === 0){
 				res.send(JSON.stringify(null));
 			}
@@ -62,7 +61,7 @@ var appRouter = function(app) {
 		var id = req.params.id;
 		con.query('SELECT * FROM history WHERE diet_item_id = ?', id, function(err, result){
 			if(err)
-				throw err;
+				return this.sendErrorMessage('Error');
 			res.send(JSON.stringify(result));
 		});
 
@@ -79,7 +78,7 @@ var appRouter = function(app) {
 			[id, date],
 			function(err, result) {
 				if(err)
-					throw err;
+					return this.sendErrorMessage('Error');
 				res.send(JSON.stringify("success"));
 			}
 		);
@@ -92,7 +91,7 @@ var appRouter = function(app) {
 
 		con.query('DELETE FROM history WHERE diet_item_id = ? AND CAST(FROM_UNIXTIME(?) AS DATE) = CAST(date AS DATE)',[id, date], function(err, result){
 			if(err)
-				throw err;
+				return this.sendErrorMessage('Error');
 			if(result.affectedRows.length === 0)
 				res.sendStatus(404);
 			res.sendStatus(204);
@@ -100,5 +99,16 @@ var appRouter = function(app) {
 
 	})
 
+	app.delete("/diet/:id", function(req,res){
+
+		var id = req.params.id;
+		con.query('DELETE FROM diet_items WHERE id = ?',id, function(err, result){
+			if(err)
+				return this.sendErrorMessage('Error');
+			if(result.affectedRows.length === 0)
+				res.sendStatus(404);
+			res.sendStatus(204);
+		});
+	})
 }	
 module.exports = appRouter;
